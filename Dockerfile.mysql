@@ -1,0 +1,8 @@
+FROM mysql:8.0
+
+ENV MYSQL_ROOT_PASSWORD=root
+ENV MYSQL_DATABASE=weather_db
+ENV MYSQL_USER=weather_user
+ENV MYSQL_PASSWORD=weather_pass
+
+EXPOSE 3306
