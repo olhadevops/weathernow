@@ -56,3 +56,5 @@ npm run dev
 ```
 docker-compose up --build
 ```
+
+## Accepting connections at http://localhost:3000
