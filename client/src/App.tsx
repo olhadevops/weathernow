@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { useEffect } from "react";
 import {
   ArrowBackIos as ArrowBackIcon,
@@ -22,7 +22,7 @@ import {
   setAvailableCities,
   clearError,
 } from "./features/weatherState";
-import { countries, type Country } from "./data/countries";
+import { countries } from "./data/countries";
 import MainContent from "./components/MainContent";
 import SettingsPanel from "./components/SettingsPanelProps";
 import { usePanelState } from "./hooks/usePanelState";
@@ -32,13 +32,14 @@ import { useLocationNavigation } from "./hooks/useLocationNavigation";
 import { fetchForecast, fetchWeather } from "./features/weatherApi";
 import TopBar from "./components/TopBar";
 import Sidebar from "./components/Sidebar";
+import { fetchListSettings } from "./features/weatherApi/api";
 
 const App: React.FC = () => {
   const dispatch = useReduxDispatch();
   const {
     selectedCountry,
     selectedCity,
-    availableCities,
+    availableLocations,
     weatherData,
     forecastData,
     loading,
@@ -47,14 +48,13 @@ const App: React.FC = () => {
   } = useReduxSelector((state) => state.weather);
 
   const [locations, setLocations] = useState<LocationData[]>([
-    { id: 1, country: "Ukraine", city: "Kyiv" },
-    { id: 2, country: "USA", city: "New York" },
-    { id: 3, country: "France", city: "Paris" },
+    // { id: 1, country: "Ukraine", city: "Kyiv" },
+    // { id: 2, country: "USA", city: "New York" },
+    // { id: 3, country: "France", city: "Paris" },
   ]);
 
   const [selectedLocationIndex, setSelectedLocationIndex] = useState(0);
-  const [nextId, setNextId] = useState(3);
-  const ignoreScroll = useRef<boolean>(false);
+  const [nextId, setNextId] = useState(0);
 
   const {
     drawerOpen,
@@ -63,7 +63,7 @@ const App: React.FC = () => {
     handleLeftPanelToggle,
   } = usePanelState();
 
-  const { selectedLocation, onPrevLocation, onNextLocation, onLocationSelect } =
+  const { onPrevLocation, onNextLocation, onLocationSelect } =
     useLocationNavigation({
       locations,
       selectedLocationIndex,
@@ -79,56 +79,69 @@ const App: React.FC = () => {
     setSelectedLocationIndex,
   });
 
+  useEffect(() => {
+    dispatch(fetchListSettings());
+  }, []);
+
+  useEffect(() => {
+    if (!availableLocations.length || selectedCity) {
+      return;
+    }
+
+    setLocations(availableLocations);
+    setNextId(availableLocations.length);
+
+    const initialLocation = availableLocations[0];
+    if (initialLocation) {
+      dispatch(setSelectedCountry(initialLocation.country));
+      dispatch(setSelectedCity(initialLocation.city));
+    }
+  }, [availableLocations, selectedCity, dispatch]);
+
   // Update available cities when country changes
   useEffect(() => {
     const country = countries.find((c) => c.code === selectedCountry);
     if (country) {
+      console.log("country", country);
       dispatch(setAvailableCities(country.cities));
       // Set first city as default if current city is not in the new country
-      if (!country.cities.includes(selectedCity)) {
-        dispatch(setSelectedCity(country.cities[0]));
+      if (
+        !country.cities.includes(selectedCity) &&
+        availableLocations?.length
+      ) {
+        // dispatch(setSelectedCity(country.cities[0]));
+        dispatch(setSelectedCity(availableLocations[0].city));
       }
     }
   }, [selectedCountry, dispatch]);
 
   // Auto-fetch weather and forecast when country or city changes
   useEffect(() => {
-    if (selectedCountry && selectedCity) {
-      dispatch(
-        fetchWeather({ city: selectedCity, countryCode: selectedCountry }),
-      );
-      dispatch(
-        fetchForecast({ city: selectedCity, countryCode: selectedCountry }),
-      );
+    if (!selectedCountry || !selectedCity) {
+      return;
     }
+
+    console.log(`Fetching data for: ${selectedCity}, ${selectedCountry}`);
+
+    const weatherPromise = dispatch(
+      fetchWeather({ city: selectedCity, countryCode: selectedCountry }),
+    );
+
+    console.log("fetchForecast1");
+
+    const forecastPromise = dispatch(
+      fetchForecast({ city: selectedCity, countryCode: selectedCountry }),
+    );
+
+    return () => {
+      weatherPromise.abort();
+      forecastPromise.abort();
+    };
   }, [selectedCountry, selectedCity, dispatch]);
 
-  const handleCountryChange = (country: Country | null) => {
-    if (country) {
-      dispatch(setSelectedCountry(country.code));
-    }
-  };
-
-  const handleCityChange = (city: string) => {
-    dispatch(setSelectedCity(city));
-  };
-
-  const handleRefresh = () => {
-    if (selectedCountry && selectedCity) {
-      dispatch(
-        fetchWeather({ city: selectedCity, countryCode: selectedCountry }),
-      );
-      dispatch(
-        fetchForecast({ city: selectedCity, countryCode: selectedCountry }),
-      );
-    }
-  };
-
-  const handleClearError = () => {
+  const handleClearError = useCallback(() => {
     dispatch(clearError());
-  };
-
-  const selectedCountryData = countries.find((c) => c.code === selectedCountry);
+  }, [dispatch]);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -228,7 +241,7 @@ const App: React.FC = () => {
           }}
         >
           <MainContent
-            isLoading={loading}
+            isLoading={loading || forecastLoading}
             isForecastLoading={forecastLoading}
             weatherData={weatherData}
             forecastData={forecastData}

@@ -37,7 +37,7 @@ export interface ForecastItem {
 }
 
 export interface ForecastData {
-  cod: string;
+  code: string;
   message: number;
   cnt: number;
   list: ForecastItem[];

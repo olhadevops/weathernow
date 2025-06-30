@@ -1,6 +1,7 @@
 import os
 import aiohttp
 from dotenv import load_dotenv
+from fastapi import HTTPException
 
 load_dotenv()
 
@@ -75,8 +76,9 @@ async def get_forecast(city: str, country: str = "UA", units: str = "metric", da
     ) as session:
         async with session.get(FORECAST_OPENWEATHER_URL, params=params) as response:
             if response.status != 200:
-                return {
-                    "error": f"Forecast API Error: {response.status}, {await response.text()}"
-                }
+                raise HTTPException(
+                    status_code=502,
+                    detail=f"Forecast API Error: Received status {response.status}. Details: Forecast API Error: {response.status}, {await response.text()}"
+                )
 
             return await response.json()

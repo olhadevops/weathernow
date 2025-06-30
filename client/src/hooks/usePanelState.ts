@@ -11,7 +11,7 @@ interface UsePanelStateReturn {
 
 export function usePanelState(): UsePanelStateReturn {
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [leftPanelOpen, setLeftPanelOpen] = useState(true);
+  const [leftPanelOpen, setLeftPanelOpen] = useState(false);
 
   const handleDrawerToggle = () => {
     setDrawerOpen(!drawerOpen);

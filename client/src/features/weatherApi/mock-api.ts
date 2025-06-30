@@ -49,7 +49,7 @@ export const fetchWeather = createAsyncThunk(
       timezone: 10800,
       id: 703448,
       name: "Kyiv",
-      cod: 200,
+      code: 200,
     };
   },
 );
@@ -58,7 +58,7 @@ export const fetchForecast = createAsyncThunk(
   "weather/fetchForecast",
   async ({ city, countryCode }: { city: string; countryCode: string }) => {
     return {
-      cod: "200",
+      code: "200",
       message: 0,
       cnt: 40,
       list: [

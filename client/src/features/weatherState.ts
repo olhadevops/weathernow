@@ -3,6 +3,11 @@ import { countries } from "../data/countries";
 import { ForecastData } from "../types/forecast";
 import { WeatherData } from "../types/weather-app";
 import { fetchForecast, fetchWeather } from "./weatherApi";
+import {
+  deleteSettings,
+  fetchCreateSettings,
+  fetchListSettings,
+} from "./weatherApi/api";
 
 interface WeatherState {
   weatherData: WeatherData | null;
@@ -10,6 +15,7 @@ interface WeatherState {
   selectedCountry: string;
   selectedCity: string;
   availableCities: string[];
+  availableLocations: { id: number; country: string; city: string }[];
   loading: boolean;
   forecastLoading: boolean;
   error: string | null;
@@ -19,9 +25,10 @@ interface WeatherState {
 const initialState: WeatherState = {
   weatherData: null,
   forecastData: null,
-  selectedCountry: "UA",
-  selectedCity: "Kyiv",
-  availableCities: countries.find((c) => c.code === "UA")?.cities || [],
+  selectedCountry: "",
+  selectedCity: "",
+  availableCities: [],
+  availableLocations: [],
   loading: false,
   forecastLoading: false,
   error: null,
@@ -43,12 +50,6 @@ const weatherSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
-    clearWeatherData: (state) => {
-      state.weatherData = null;
-    },
-    clearForecastData: (state) => {
-      state.forecastData = null;
-    },
   },
   extraReducers: (builder) => {
     builder
@@ -68,14 +69,54 @@ const weatherSlice = createSlice({
       })
       .addCase(fetchForecast.pending, (state) => {
         state.forecastLoading = true;
+        state.error = null;
       })
       .addCase(fetchForecast.fulfilled, (state, action) => {
         state.forecastLoading = false;
+        console.log("fetchForecast action.payload", action.payload);
         state.forecastData = action.payload;
+        state.error = null;
       })
       .addCase(fetchForecast.rejected, (state, action) => {
         state.forecastLoading = false;
-        console.error("Forecast fetch failed:", action.error.message);
+        console.error("fetchForecast fetch failed:", action.error.message);
+        state.error = action.error.message || "Failed to fetch forecast";
+        state.forecastData = null;
+      })
+      .addCase(fetchCreateSettings.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(fetchCreateSettings.fulfilled, (state, action) => {
+        state.loading = false;
+      })
+      .addCase(fetchCreateSettings.rejected, (state, action) => {
+        state.loading = false;
+        console.error("Create Settings fetch failed:", action.error.message);
+      })
+      .addCase(fetchListSettings.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchListSettings.fulfilled, (state, action) => {
+        state.loading = false;
+        state.availableLocations = action.payload;
+        state.error = null;
+      })
+      .addCase(fetchListSettings.rejected, (state, action) => {
+        state.loading = false;
+        state.availableLocations = [];
+        state.error = action.error.message || "Failed to fetch list settings";
+        state.availableLocations = [];
+      })
+      .addCase(deleteSettings.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(deleteSettings.fulfilled, (state, action) => {
+        state.loading = false;
+      })
+      .addCase(deleteSettings.rejected, (state, action) => {
+        state.loading = false;
+        console.error("Delete Settings fetch failed:", action.error.message);
       });
   },
 });
@@ -85,7 +126,5 @@ export const {
   setSelectedCity,
   setAvailableCities,
   clearError,
-  clearWeatherData,
-  clearForecastData,
 } = weatherSlice.actions;
 export default weatherSlice.reducer;

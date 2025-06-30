@@ -62,8 +62,10 @@ export function useLocationNavigation({
   useEffect(() => {
     const item = locations[selectedLocationIndex || 0];
 
-    dispatch(fetchWeather({ city: item.city, countryCode: item.country }));
-    dispatch(fetchForecast({ city: item.city, countryCode: item.country }));
+    if (!item) return;
+
+    dispatch(fetchWeather({ city: item?.city, countryCode: item?.country }));
+    dispatch(fetchForecast({ city: item?.city, countryCode: item?.country }));
   }, [selectedLocationIndex]);
 
   return {

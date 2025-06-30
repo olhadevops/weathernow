@@ -17,6 +17,7 @@ import {
   LocationOn as LocationIcon,
 } from "@mui/icons-material";
 import { LocationData } from "../../types/location";
+import React from "react";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -28,7 +29,7 @@ interface SidebarProps {
   handleClose: () => void;
 }
 
-export default function Sidebar({
+const Sidebar = ({
   isOpen,
   locations,
   selectedLocationIndex,
@@ -36,7 +37,7 @@ export default function Sidebar({
   onPrevLocation,
   onNextLocation,
   handleClose,
-}: SidebarProps) {
+}: SidebarProps) => {
   const selectedLocation = locations[selectedLocationIndex];
 
   return (
@@ -167,4 +168,6 @@ export default function Sidebar({
       </Box>
     </Drawer>
   );
-}
+};
+
+export default React.memo(Sidebar);

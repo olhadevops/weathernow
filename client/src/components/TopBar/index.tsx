@@ -8,10 +8,10 @@ interface TopBarProps {
   title?: string;
 }
 
-export default function TopBar({
+const TopBar = ({
   onSettingsClick,
   title = "Panel of locations",
-}: TopBarProps) {
+}: TopBarProps) => {
   return (
     <AppBar position="static" elevation={2}>
       <Toolbar>
@@ -43,4 +43,6 @@ export default function TopBar({
       </Toolbar>
     </AppBar>
   );
-}
+};
+
+export default React.memo(TopBar);

@@ -4,6 +4,11 @@ import type React from "react";
 
 import { useState } from "react";
 import { LocationData } from "../types/location";
+import { useReduxDispatch } from "./useRedux";
+import {
+  deleteSettings,
+  fetchCreateSettings,
+} from "../features/weatherApi/api";
 
 interface UseSettingsPanelProps {
   locations: LocationData[];
@@ -36,6 +41,8 @@ export function useSettingsPanel({
   const [country, setCountry] = useState("");
   const [city, setCity] = useState("");
 
+  const dispatch = useReduxDispatch();
+
   const resetForm = () => {
     setCountry("");
     setCity("");
@@ -49,13 +56,16 @@ export function useSettingsPanel({
     setCity(value);
   };
 
-  const onAddLocation = () => {
+  const onAddLocation = async () => {
     if (country.trim() && city.trim()) {
       const newLocation: LocationData = {
         id: nextId,
         country: country.trim(),
         city: city.trim(),
       };
+
+      dispatch(fetchCreateSettings({ city, country }));
+
       setLocations([...locations, newLocation]);
       setNextId(nextId + 1);
       resetForm();
@@ -63,15 +73,19 @@ export function useSettingsPanel({
   };
 
   const onDeleteLocation = (id: number) => {
+    dispatch(deleteSettings(id));
+
+    console.log("locations", locations);
     const locationIndex = locations.findIndex((loc) => loc.id === id);
     const newLocations = locations.filter((location) => location.id !== id);
-    setLocations(newLocations);
+    console.log("newLocations", newLocations);
+    const locs = newLocations.length ? newLocations : [];
+    setLocations(locs);
 
-    // Корректируем выбранный индекс после удаления
-    if (newLocations.length === 0) {
+    if (locs.length === 0) {
       setSelectedLocationIndex(0);
-    } else if (selectedLocationIndex >= newLocations.length) {
-      setSelectedLocationIndex(newLocations.length - 1);
+    } else if (selectedLocationIndex >= locs.length) {
+      setSelectedLocationIndex(locs.length - 1);
     } else if (
       locationIndex <= selectedLocationIndex &&
       selectedLocationIndex > 0
