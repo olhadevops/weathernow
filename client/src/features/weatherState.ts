@@ -1,67 +1,130 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
-import {API_BASE_URL} from "../constants";
+import { createSlice } from "@reduxjs/toolkit";
+import { countries } from "../data/countries";
+import { ForecastData } from "../types/forecast";
+import { WeatherData } from "../types/weather-app";
+import { fetchForecast, fetchWeather } from "./weatherApi";
+import {
+  deleteSettings,
+  fetchCreateSettings,
+  fetchListSettings,
+} from "./weatherApi/api";
 
 interface WeatherState {
-    city: string;
-    country: string;
-    temperature: number | null;
-    humidity: number | null;
-    weather: string;
-    loading?: boolean;
-    error?: string | null;
+  weatherData: WeatherData | null;
+  forecastData: ForecastData | null;
+  selectedCountry: string;
+  selectedCity: string;
+  availableCities: string[];
+  availableLocations: { id: number; country: string; city: string }[];
+  loading: boolean;
+  forecastLoading: boolean;
+  error: string | null;
 }
 
+// Initialize with Ukraine and Kyiv as defaults
 const initialState: WeatherState = {
-    city: "Kyiv",
-    country: "Ukraine",
-    temperature: null,
-    humidity: null,
-    weather: "",
-    loading: false,
-    error: null,
+  weatherData: null,
+  forecastData: null,
+  selectedCountry: "",
+  selectedCity: "",
+  availableCities: [],
+  availableLocations: [],
+  loading: false,
+  forecastLoading: false,
+  error: null,
 };
 
-export const fetchWeather = createAsyncThunk(
-    "weather/fetchWeather",
-    async ({ city, country }: { city: string; country: string }) => {
-        const response = await axios.get(
-            `${API_BASE_URL}/weather-api?city=${city}&country=${country}`
-        );
-        return response.data;
-    }
-);
-
-
 const weatherSlice = createSlice({
-    name: "weather",
-    initialState,
-    reducers: {
-        setCity: (state, action) => {
-            state.city = action.payload;
-        },
-        setCountry: (state, action) => {
-            state.country = action.payload;
-        },
+  name: "weather",
+  initialState,
+  reducers: {
+    setSelectedCountry: (state, action) => {
+      state.selectedCountry = action.payload;
     },
-    extraReducers: (builder) => {
-        builder
-            .addCase(fetchWeather.pending, (state) => {
-                state.loading = true;
-                state.error = null;
-            })
-            .addCase(fetchWeather.fulfilled, (state, action: {payload: any}) => {
-                state.loading = false;
-                state.temperature = action.payload.temperature;
-                state.humidity = action.payload.humidity;
-                state.weather = action.payload.weather;
-            })
-            .addCase(fetchWeather.rejected, (state, action) => {
-                state.loading = false;
-                state.error = action.error.message || "Failed to fetch weather";
-            });
+    setSelectedCity: (state, action) => {
+      state.selectedCity = action.payload;
     },
+    setAvailableCities: (state, action) => {
+      state.availableCities = action.payload;
+    },
+    clearError: (state) => {
+      state.error = null;
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchWeather.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchWeather.fulfilled, (state, action) => {
+        state.loading = false;
+        state.weatherData = action.payload;
+        state.error = null;
+      })
+      .addCase(fetchWeather.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || "Failed to fetch weather";
+        state.weatherData = null;
+      })
+      .addCase(fetchForecast.pending, (state) => {
+        state.forecastLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchForecast.fulfilled, (state, action) => {
+        state.forecastLoading = false;
+        console.log("fetchForecast action.payload", action.payload);
+        state.forecastData = action.payload;
+        state.error = null;
+      })
+      .addCase(fetchForecast.rejected, (state, action) => {
+        state.forecastLoading = false;
+        console.error("fetchForecast fetch failed:", action.error.message);
+        state.error = action.error.message || "Failed to fetch forecast";
+        state.forecastData = null;
+      })
+      .addCase(fetchCreateSettings.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(fetchCreateSettings.fulfilled, (state, action) => {
+        state.loading = false;
+      })
+      .addCase(fetchCreateSettings.rejected, (state, action) => {
+        state.loading = false;
+        console.error("Create Settings fetch failed:", action.error.message);
+      })
+      .addCase(fetchListSettings.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchListSettings.fulfilled, (state, action) => {
+        state.loading = false;
+        state.availableLocations = action.payload;
+        state.error = null;
+      })
+      .addCase(fetchListSettings.rejected, (state, action) => {
+        state.loading = false;
+        state.availableLocations = [];
+        state.error = action.error.message || "Failed to fetch list settings";
+        state.availableLocations = [];
+      })
+      .addCase(deleteSettings.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(deleteSettings.fulfilled, (state, action) => {
+        state.loading = false;
+      })
+      .addCase(deleteSettings.rejected, (state, action) => {
+        state.loading = false;
+        console.error("Delete Settings fetch failed:", action.error.message);
+      });
+  },
 });
 
-export const { setCity, setCountry } = weatherSlice.actions;
+export const {
+  setSelectedCountry,
+  setSelectedCity,
+  setAvailableCities,
+  clearError,
+} = weatherSlice.actions;
 export default weatherSlice.reducer;
